@@ -12,12 +12,15 @@ class Dashboard extends Component {
     transactions: [],
     balance: 0,
     inputValue: '',
-    deposit: 0,
-    withdraw: 0,
   };
 
   handleChangeInput = ({ target }) => {
-    this.setState({ inputValue: target.value });
+    const { value } = target;
+    if (value.includes('-')) {
+      this.notifyIncorrectInput();
+    } else {
+      this.setState({ inputValue: value });
+    }
   };
 
   handleSubmit = evt => {
@@ -46,6 +49,8 @@ class Dashboard extends Component {
 
   notifyNotSum = () => toast('Введите сумму для проведения операции!');
 
+  notifyIncorrectInput = () => toast('Сумма не должна быть отрицательной!');
+
   handleSubmitSetState = (newBalance, name, inputValue) => {
     this.setState(
       prevState => ({
@@ -65,23 +70,17 @@ class Dashboard extends Component {
     );
   };
 
-  changeBalance = () => {
+  changeBalance = type => {
     const { transactions } = this.state;
 
-    const depositSum = transactions.reduce((acc, el) => {
-      return el.type === 'deposit' ? acc + Number(el.amount) : acc;
-    }, 0);
-    const withdrawSum = transactions.reduce((acc, el) => {
-      return el.type === 'withdraw' ? acc + Number(el.amount) : acc;
-    }, 0);
-    this.setState({
-      deposit: depositSum,
-      withdraw: withdrawSum,
-    });
+    return transactions.reduce(
+      (acc, el) => (el.type === type ? acc + Number(el.amount) : acc),
+      0,
+    );
   };
 
   render() {
-    const { transactions, balance, inputValue, deposit, withdraw } = this.state;
+    const { transactions, balance, inputValue } = this.state;
 
     return (
       <div className={style.dashboard}>
@@ -90,7 +89,7 @@ class Dashboard extends Component {
           handleChangeInput={this.handleChangeInput}
           handleSubmit={this.handleSubmit}
         />
-        <Balance balance={balance} deposit={deposit} withdraw={withdraw} />
+        <Balance balance={balance} changeBalance={this.changeBalance} />
         <TransactionHistory transactions={transactions} />
         <ToastContainer />
       </div>
