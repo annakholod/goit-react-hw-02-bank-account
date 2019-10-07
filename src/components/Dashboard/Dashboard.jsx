@@ -1,76 +1,63 @@
 import React, { Component } from 'react';
 import shortid from 'shortid';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { ToastContainer } from 'react-toastify';
 import style from './Dashboard.module.css';
 import Controls from './Controls/Controls';
 import Balance from './Balance/Balance';
 import TransactionHistory from './TransactionHistory/TransactionHistory';
+import {
+  notifyNoMoney,
+  notifyNotSum,
+  notifyIncorrectInput,
+} from '../../helpers/helpers';
 
 class Dashboard extends Component {
   state = {
     transactions: [],
-    balance: 0,
     inputValue: '',
   };
 
   handleChangeInput = ({ target }) => {
     const { value } = target;
     if (value.includes('-')) {
-      this.notifyIncorrectInput();
-    } else {
-      this.setState({ inputValue: value });
+      notifyIncorrectInput();
+      return;
     }
+    this.setState({ inputValue: value });
   };
 
   handleSubmit = evt => {
-    const { balance, inputValue } = this.state;
+    const { inputValue } = this.state;
     const { name } = evt.target;
 
     evt.preventDefault();
-    let newBalance = 0;
-    if (Number(inputValue) === 0) {
-      this.notifyNotSum();
-    } else if (name === 'deposit') {
-      newBalance = balance + Number(inputValue);
-      this.handleSubmitSetState(newBalance, name, inputValue);
-    } else if (name === 'withdraw') {
-      if (Number(inputValue) > balance) {
-        this.notifyNoMoney();
-      } else {
-        newBalance = balance - Number(inputValue);
-        this.handleSubmitSetState(newBalance, name, inputValue);
-      }
+    if (inputValue === '0') {
+      notifyNotSum();
+      return;
     }
+    if (name === 'withdraw' && Number(inputValue) > this.changeBalance()) {
+      notifyNoMoney();
+      return;
+    }
+    this.addTransactionToState(name, inputValue);
   };
 
-  notifyNoMoney = () =>
-    toast('На счету недостаточно средств для проведения операции!');
-
-  notifyNotSum = () => toast('Введите сумму для проведения операции!');
-
-  notifyIncorrectInput = () => toast('Сумма не должна быть отрицательной!');
-
-  handleSubmitSetState = (newBalance, name, inputValue) => {
-    this.setState(
-      prevState => ({
-        balance: newBalance,
-        inputValue: '',
-        transactions: [
-          ...prevState.transactions,
-          {
-            id: shortid.generate(),
-            type: name,
-            amount: inputValue,
-            date: new Date().toLocaleString('en-GB'),
-          },
-        ],
-      }),
-      this.changeBalance,
-    );
+  addTransactionToState = (name, inputValue) => {
+    this.setState(prevState => ({
+      inputValue: '',
+      transactions: [
+        ...prevState.transactions,
+        {
+          id: shortid.generate(),
+          type: name,
+          amount: inputValue,
+          date: new Date().toLocaleString('en-GB'),
+        },
+      ],
+    }));
   };
 
-  changeBalance = type => {
+  changeFinance = type => {
     const { transactions } = this.state;
 
     return transactions.reduce(
@@ -79,17 +66,30 @@ class Dashboard extends Component {
     );
   };
 
+  changeBalance = () => {
+    const { transactions } = this.state;
+
+    let balance = 0;
+    if (transactions.length !== 0) {
+      balance = this.changeFinance('deposit') - this.changeFinance('withdraw');
+    }
+    return balance;
+  };
+
   render() {
-    const { transactions, balance, inputValue } = this.state;
+    const { transactions, inputValue } = this.state;
 
     return (
       <div className={style.dashboard}>
         <Controls
           inputValue={inputValue}
           handleChangeInput={this.handleChangeInput}
-          handleSubmit={this.handleSubmit}
+          onClick={this.handleSubmit}
         />
-        <Balance balance={balance} changeBalance={this.changeBalance} />
+        <Balance
+          changeBalance={this.changeBalance}
+          changeFinance={this.changeFinance}
+        />
         <TransactionHistory transactions={transactions} />
         <ToastContainer />
       </div>

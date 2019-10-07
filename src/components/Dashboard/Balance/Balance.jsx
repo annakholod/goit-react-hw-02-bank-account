@@ -2,30 +2,28 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import style from './Balance.module.css';
 
-const Balance = ({ balance, changeBalance }) => {
-  const deposit = changeBalance('deposit');
-  const withdraw = changeBalance('withdraw');
-  const balanceFormat = balance.toLocaleString('ru-RU');
-  const depositFormat = deposit.toLocaleString('ru-RU');
-  const withdrawFormat = withdraw.toLocaleString('ru-RU');
+const Balance = ({ changeBalance, changeFinance }) => {
+  const deposit = changeFinance('deposit');
+  const withdraw = changeFinance('withdraw');
+  const balance = changeBalance();
   return (
     <section className={style.balance}>
       <p className={style.deposit}>
         <span>⬆ </span>
-        {depositFormat}$
+        {deposit}$
       </p>
       <p className={style.withdraw}>
         <span>⬇ </span>
-        {withdrawFormat}$
+        {withdraw}$
       </p>
-      <span>Balance: {balanceFormat}$</span>
+      <span>Balance: {balance}$</span>
     </section>
   );
 };
 
 Balance.propTypes = {
-  balance: PropTypes.number.isRequired,
   changeBalance: PropTypes.func.isRequired,
+  changeFinance: PropTypes.func.isRequired,
 };
 
 export default Balance;
